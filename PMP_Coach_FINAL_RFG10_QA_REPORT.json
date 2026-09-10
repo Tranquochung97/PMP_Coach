@@ -1,0 +1,169 @@
+{
+  "tester": "Independent QA / Release Gate",
+  "scope": "Apply RFG10 compact Vietnamese explanation engine to Cách 1 and Cách 2; preserve Set 3 offline translations, review history, retake mocks, and PWA packaging.",
+  "limitations": "This run uses static/data integrity and JavaScript syntax gates. Live browser E2E is not claimed here.",
+  "home": {
+    "build": "HOME FINAL RFG10",
+    "passed": 15,
+    "failed": 0,
+    "tests": [
+      {
+        "test": "JavaScript syntax",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "test": "Database 2700 records",
+        "status": "PASS",
+        "detail": "2700"
+      },
+      {
+        "test": "Set 3 has 720 questions",
+        "status": "PASS",
+        "detail": "720"
+      },
+      {
+        "test": "Offline translation pack exists",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "test": "RFG10 final override is last explanation engine",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "test": "Cách 1 uses V/X compact format",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "test": "Cách 2 uses PMI Decision Engine",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "test": "Explanation sections hide translations",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "test": "Vietnamese explanation engine active",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "test": "No English source rationale in final block",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "test": "Mock Final 1 = 180",
+        "status": "PASS",
+        "detail": "180"
+      },
+      {
+        "test": "Mock Final 2 = 180",
+        "status": "PASS",
+        "detail": "180"
+      },
+      {
+        "test": "Mock Final overlap = 0",
+        "status": "PASS",
+        "detail": "0"
+      },
+      {
+        "test": "Retake Mock preserved",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "test": "Review safe opener preserved",
+        "status": "PASS",
+        "detail": ""
+      }
+    ]
+  },
+  "iphone": {
+    "build": "iPhone FINAL RFG10",
+    "passed": 15,
+    "failed": 0,
+    "tests": [
+      {
+        "test": "JavaScript syntax",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "test": "Database 2700 records",
+        "status": "PASS",
+        "detail": "2700"
+      },
+      {
+        "test": "Set 3 has 720 questions",
+        "status": "PASS",
+        "detail": "720"
+      },
+      {
+        "test": "Offline translation pack exists",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "test": "RFG10 final override is last explanation engine",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "test": "Cách 1 uses V/X compact format",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "test": "Cách 2 uses PMI Decision Engine",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "test": "Explanation sections hide translations",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "test": "Vietnamese explanation engine active",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "test": "No English source rationale in final block",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "test": "Mock Final 1 = 180",
+        "status": "PASS",
+        "detail": "180"
+      },
+      {
+        "test": "Mock Final 2 = 180",
+        "status": "PASS",
+        "detail": "180"
+      },
+      {
+        "test": "Mock Final overlap = 0",
+        "status": "PASS",
+        "detail": "0"
+      },
+      {
+        "test": "Retake Mock preserved",
+        "status": "PASS",
+        "detail": ""
+      },
+      {
+        "test": "Review safe opener preserved",
+        "status": "PASS",
+        "detail": ""
+      }
+    ]
+  }
+}
