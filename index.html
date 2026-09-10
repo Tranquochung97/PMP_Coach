@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PMP Coach — iPhone FINAL · RFG10 v26 READING COMFORT</title>
+<title>PMP Coach — iPhone FINAL RFG10 SYNCED</title>
 <style>
 
 :root{--nav:#173a61;--nav2:#0f2b49;--accent:#1f66ad;--bg:#f4f7fa;--card:#fff;--border:#ccd6e1;--text:#172331;--muted:#66788a;--good:#1b7f4b;--bad:#b52a2a;--warn:#9b6500;--hl:#fff59d}
@@ -829,8 +829,8 @@ button,input,select,textarea{font-family:var(--reading-font)!important}
 <body>
 <header class="top">
   <div>
-    <div class="brand">PMP Coach — iPhone v26 READING COMFORT</div>
-    <div class="sub">Thi thử · Review · 5.000 Vocabulary · 13 Day · 1.080 câu · Review · Vocabulary · Voice</div>
+    <div class="brand">PMP Coach — iPhone FINAL RFG10</div>
+    <div class="sub">Thi thử · Review · 5.000 Vocabulary · 13 Day · 2.700 câu · Bộ 3 offline 720 câu · RFG10</div>
   </div>
   <div class="top-actions">
     <span id="timerBadge" class="timer-badge hidden">00:00</span>
@@ -4416,6 +4416,277 @@ rationaleBlock=function(q,o,isCorrect){
  .rfg10-mini-grid,.rfg10-engine-top{grid-template-columns:1fr}
  .rfg10-engine-top>div,.rfg10-mini-grid>div{border-right:0}
  .rfg10-vx{width:22px;height:22px}
+}
+</style>
+
+
+<script id="iphone-final-home-sync-patch">
+// ===== iPhone FINAL HOME-SYNC PATCH =====
+// Fixes:
+// 1) iPhone source question/options show Vietnamese translation when a verified offline translation exists.
+// 2) Review screen uses the same RFG10 explanation structure as HOME.
+// 3) Review page becomes vertically scrollable when both explanation modes are enabled.
+// 4) Original source questions mapped into Set 3 can reuse the Set 3 offline translation by source + question number.
+
+const PMP_VI_BY_SOURCE_Q = (() => {
+  const out = {};
+  try {
+    if (Array.isArray(QUESTIONS) && typeof PMP_SET3_VI === 'object') {
+      QUESTIONS.filter(q => q.bank === 'set3').forEach(q => {
+        const key = `${q.source}|${q.sourceQuestion}`;
+        if (PMP_SET3_VI[q.id]) out[key] = PMP_SET3_VI[q.id];
+      });
+    }
+  } catch(e) {}
+  return out;
+})();
+
+function pmpViPackFor(q){
+  if(!q) return {};
+  if(typeof PMP_SET3_VI === 'object' && PMP_SET3_VI[q.id]) return PMP_SET3_VI[q.id];
+  const key = `${q.source}|${q.sourceQuestion}`;
+  if(PMP_VI_BY_SOURCE_Q[key]) return PMP_VI_BY_SOURCE_Q[key];
+  return {};
+}
+
+function pmpViHtml(text){
+  if(!text) return '';
+  return `<div class="full-vi iphone-vi-line"><b>🇻🇳 Dịch:</b> <span class="tr-value">${esc(text)}</span></div>`;
+}
+
+reviewSourceBlock = function(q,it){
+ const fi=fixedReviewItem(q,it), correct=q.correct||[], tr=pmpViPackFor(q);
+ return `<section class="review-source-once iphone-source-translation-on">
+   <div class="review-source-title">① CÂU HỎI & ĐÁP ÁN</div>
+   <div class="review-source-question vocab-zone">
+     <div class="source-en">${inlineViReview(q.question,7)}</div>
+     ${pmpViHtml(tr.q)}
+   </div>
+   <div class="review-source-options">${(q.options||[]).map(o=>{
+      const c=correct.includes(o.id), u=(fi.answer||[]).includes(o.id);
+      return `<div class="source-option ${c?'source-correct':(u?'source-user-wrong':'')} vocab-zone">
+       <div class="source-option-en"><b>${esc(o.id)}.</b> ${inlineViReview(o.text,5)}
+          ${c?'<span class="source-mark good">✓ Đúng</span>':(u?'<span class="source-mark bad">× Bạn chọn</span>':'')}</div>
+       ${pmpViHtml(tr[o.id])}
+      </div>`;
+   }).join('')}</div>
+ </section>`;
+};
+
+// iPhone live question screen: add Vietnamese translation below Question and Options when available.
+// This also fixes the exact case shown on GitHub when an original-bank question has a Set 3 translation twin.
+const __iphone_final_renderExam_before_sync = renderExam;
+renderExam = function(){
+  const A=S.active;
+  if(!A){ return __iphone_final_renderExam_before_sync(); }
+  clearVoiceTarget(); stopVocabVoice();
+  const id=A.ids[A.index], q=getQ(id), selected=new Set(A.answers[id]||[]);
+  const tr=pmpViPackFor(q);
+  timerBadge.classList.remove('hidden');
+  clearInterval(window._timer);
+  const tick=()=>{
+    const rem=A.limit-Math.round((Date.now()-A.start)/1000);
+    timerBadge.textContent=fmt(rem);
+    if(rem<=0){clearInterval(window._timer);submitExam(true)}
+  };
+  window._timer=setInterval(tick,500); tick();
+
+  const optMap=Object.fromEntries(q.options.map(o=>[o.id,o]));
+  const order=A.options[id];
+  const secSoFar=(A.elapsed[id]||0)+Math.max(0,(Date.now()-(A.qEnterAt||Date.now()))/1000);
+
+  app.innerHTML=`<div class="exam-shell iphone-final-exam-shell">
+    <section class="exam-main">
+      <div class="exam-head"><div><b>${esc(A.day)} · Question ${A.index+1} of ${A.ids.length}</b>
+        <div class="qmeta">${esc(q.source)} · Câu ${q.sourceQuestion} · Previously: ${esc(q.previousStatus)} · current ${Math.round(secSoFar)}s</div></div>
+        <div class="toolrow">
+          <button class="tool" id="highlight">Highlight</button>
+          <button class="tool ${A.flagged[id]?'active':''}" id="flag">⚑ Flag</button>
+          <label class="tool"><input type="checkbox" id="unsure" ${A.unsure[id]?'checked':''}> 50:50</label>
+          <button class="tool" id="review">Review</button>
+        </div>
+      </div>
+      <div class="exam-body">
+        <div class="small">${q.correct.length>1?`Select ${q.correct.length} answers.`:'Select the best answer.'}</div>
+        <div class="question iphone-question-translated" id="qtext" data-hlkey="q">
+          <div class="source-en">${highlightedHTML(A,id,'q',q.question)}</div>
+          ${pmpViHtml(tr.q)}
+        </div>
+        <div>${order.map(k=>{const o=optMap[k];return `<label class="option ${selected.has(k)?'selected':''}">
+          <input type="${q.correct.length>1?'checkbox':'radio'}" name="ans" value="${k}" ${selected.has(k)?'checked':''}>
+          <span class="optid">${k}.</span>
+          <span class="option-text" data-hlkey="o_${k}">
+            <span class="source-en">${highlightedHTML(A,id,'o_'+k,o.text)}</span>
+            ${pmpViHtml(tr[k])}
+          </span>
+        </label>`}).join('')}</div>
+      </div>
+    </section>
+    <aside class="exam-side"><b>Question Navigator</b><div class="palette">${A.ids.map((x,i)=>`<button class="cell ${A.answers[x]?.length?'answered':''} ${i===A.index?'current':''} ${A.flagged[x]?'flagged':''} ${A.unsure[x]?'unsure':''}" data-i="${i}">${i+1}</button>`).join('')}</div>
+      <p class="small" style="margin-top:14px"><b>Alt+N</b> Next<br><b>Alt+P</b> Previous<br><b>Alt+F</b> Flag<br><b>Alt+J</b> Highlight selected text</p>
+    </aside>
+  </div>
+  <div class="bottom"><button class="btn secondary" id="prev">← Previous</button>
+    <span class="small">${Object.values(A.answers).filter(x=>x?.length).length}/${A.ids.length} answered</span>
+    <button class="btn" id="next">${A.index===A.ids.length-1?'Review':'Next →'}</button></div>`;
+
+  document.querySelectorAll('input[name=ans]').forEach(inp=>inp.onchange=()=>{
+    if(q.correct.length>1) A.answers[id]=[...document.querySelectorAll('input[name=ans]:checked')].map(x=>x.value).sort();
+    else A.answers[id]=[inp.value];
+    save(); renderExam();
+  });
+  document.getElementById('highlight').onclick=saveHighlightFromSelection;
+  document.getElementById('flag').onclick=()=>{A.flagged[id]=!A.flagged[id];save();renderExam()};
+  document.getElementById('unsure').onchange=e=>{A.unsure[id]=e.target.checked;save();renderExam()};
+  document.getElementById('prev').onclick=()=>{if(A.index>0)gotoIndex(A.index-1)};
+  document.getElementById('next').onclick=()=>{if(A.index<A.ids.length-1)gotoIndex(A.index+1);else{commitQuestionTime();openExamReview()}};
+  document.getElementById('review').onclick=()=>{commitQuestionTime();openExamReview()};
+  document.querySelectorAll('.cell').forEach(b=>b.onclick=()=>gotoIndex(+b.dataset.i));
+
+  window.onkeydown=e=>{
+    if(!S.active)return;
+    const k=e.key.toLowerCase();
+    if(e.altKey&&k==='n'){e.preventDefault();document.getElementById('next')?.click()}
+    else if(e.altKey&&k==='p'){e.preventDefault();document.getElementById('prev')?.click()}
+    else if(e.altKey&&k==='f'){e.preventDefault();document.getElementById('flag')?.click()}
+    else if(e.altKey&&k==='j'){e.preventDefault();saveHighlightFromSelection()}
+  };
+};
+
+// Final review screen override. Uses HOME-like review block + RFG10 explanations and scrolls normally.
+renderReviewQuestion = function(attemptIndex,itemIndex){
+  const attempt=S.attempts[attemptIndex];
+  if(!attempt){openReviewHistory();return false;}
+  const items=attempt.items||[];
+  if(!items.length){openReviewHistory();return false;}
+  itemIndex=Math.max(0,Math.min(items.length-1,itemIndex));
+  const it=items[itemIndex], q=resolveReviewItemQuestion(it);
+  if(!q){openReviewHistory();return false;}
+
+  timerBadge.classList.add('hidden');
+  clearInterval(window._timer);
+  const pct=attempt.total?Math.round((attempt.correct||0)/attempt.total*100):0;
+
+  app.innerHTML=`<div class="wrap review-one-wrap iphone-review-scroll-wrap">
+    <div class="review-one-top">
+      <button class="linkbtn" id="backHistory">← Review ${attemptIndex+1}</button>
+      <h2>Câu ${itemIndex+1}/${items.length}<span>${esc(attempt.day||'Review')} · ${attempt.correct||0}/${attempt.total||items.length} (${pct}%)</span></h2>
+      <span class="review-swipe-hint">⇆ Vuốt</span>
+    </div>
+    ${reviewModePickerHtml()}
+    <article class="review-question-card review-single-page iphone-review-card-scroll" id="reviewCurrent">
+      <div class="review-q-meta"><div><b>${esc(q.source)} · Câu ${q.sourceQuestion}</b><span>${it.sec||0}s</span></div>
+      <div class="review-state ${it.correct?'good':'bad'}">${it.correct?(it.unsure?'Đúng · 50:50':'Đúng'):'Sai'}</div></div>
+      ${reviewSourceBlock(q,it)}
+      ${renderReviewExplanations(q,it)}
+    </article>
+    <div class="iphone-review-bottom-final">
+      <button class="btn secondary" id="reviewPrev" ${itemIndex===0?'disabled':''}>‹</button>
+      <span class="small">Vuốt trái/phải để chuyển câu</span>
+      <button class="btn" id="reviewNext" ${itemIndex===items.length-1?'disabled':''}>›</button>
+    </div>
+  </div>`;
+
+  const root=document.getElementById('reviewCurrent');
+  bindReviewModePicker(attemptIndex,itemIndex);
+  attachVocabInteractions(root,q);
+  installReviewSelectionCache(q,root);
+
+  document.body.classList.add('iphone-review-mode','iphone-final-synced-review');
+  document.body.classList.remove('review-fit-tight','review-fit-ultra');
+
+  document.getElementById('backHistory').onclick=()=>openReviewHistory();
+  document.getElementById('reviewPrev').onclick=()=>{if(itemIndex>0)renderReviewQuestion(attemptIndex,itemIndex-1)};
+  document.getElementById('reviewNext').onclick=()=>{if(itemIndex<items.length-1)renderReviewQuestion(attemptIndex,itemIndex+1)};
+
+  let sx=0,sy=0;
+  root.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
+  root.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+    if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.4){
+      if(dx<0&&itemIndex<items.length-1)renderReviewQuestion(attemptIndex,itemIndex+1);
+      if(dx>0&&itemIndex>0)renderReviewQuestion(attemptIndex,itemIndex-1);
+    }
+  },{passive:true});
+
+  setTimeout(()=>{try{root.scrollTop=0; window.scrollTo(0,0);}catch(e){}},0);
+  return false;
+};
+
+if(typeof reviewCenter === 'function'){
+  reviewCenter = function(forcedItems,attemptObj,attemptIndex,itemIndex=0){
+    timerBadge.classList.add('hidden');
+    clearInterval(window._timer);
+    let idx=Number.isInteger(attemptIndex)?attemptIndex:-1;
+    if(idx<0&&attemptObj)idx=S.attempts.indexOf(attemptObj);
+    if(idx<0)idx=S.attempts.length-1;
+    if(idx<0)return openReviewHistory();
+    return renderReviewQuestion(idx,itemIndex);
+  };
+}
+</script>
+<style id="iphone-final-home-sync-css">
+/* Make iPhone review scrollable even when both Cách 1 and Cách 2 are enabled. */
+html,body{overflow-y:auto!important;height:auto!important;min-height:100%!important}
+body.iphone-final-synced-review #app{height:auto!important;min-height:100dvh!important;overflow:visible!important}
+body.iphone-final-synced-review .review-one-wrap.iphone-review-scroll-wrap{
+  height:auto!important;
+  min-height:calc(100dvh - 72px)!important;
+  overflow:visible!important;
+  padding-bottom:86px!important;
+  display:block!important;
+}
+body.iphone-final-synced-review .review-question-card.review-single-page.iphone-review-card-scroll{
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  overflow:visible!important;
+  display:block!important;
+  padding-bottom:18px!important;
+}
+body.iphone-final-synced-review .iphone-review-bottom-final{
+  position:sticky!important;
+  bottom:0!important;
+  left:0!important;
+  right:0!important;
+  z-index:30!important;
+  height:64px!important;
+  background:rgba(245,247,249,.96)!important;
+  border-top:1px solid var(--border)!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+  padding:8px 10px!important;
+  backdrop-filter:blur(10px);
+}
+.iphone-source-translation-on .full-vi,
+.iphone-question-translated .full-vi,
+.option-text .full-vi{
+  display:block!important;
+  margin-top:6px!important;
+  padding:7px 9px!important;
+  border-left:3px solid #6aa3d7!important;
+  background:#f4f8fc!important;
+  color:#2b4c67!important;
+  border-radius:8px!important;
+  font-size:13.5px!important;
+  line-height:1.45!important;
+}
+.iphone-source-translation-on .full-vi b,
+.iphone-question-translated .full-vi b,
+.option-text .full-vi b{color:#173f61!important}
+.explain-mode .full-vi,.rfg10-card .full-vi,.reason-body .full-vi,.elim-row .full-vi{display:none!important}
+.review-source-once .full-vi{display:block!important}
+.iphone-final-exam-shell .question{max-height:none!important;overflow:visible!important}
+.iphone-final-exam-shell .option{align-items:flex-start!important}
+.iphone-final-exam-shell .option-text{display:block!important;width:100%!important}
+.iphone-final-exam-shell .source-en{display:block}
+@media(max-width:700px){
+  .iphone-source-translation-on .full-vi,
+  .iphone-question-translated .full-vi,
+  .option-text .full-vi{font-size:12.8px!important;line-height:1.42!important;padding:6px 8px!important}
+  body.iphone-final-synced-review .review-one-top{position:sticky;top:0;background:#f5f7f9;z-index:20;padding-top:6px}
 }
 </style>
 

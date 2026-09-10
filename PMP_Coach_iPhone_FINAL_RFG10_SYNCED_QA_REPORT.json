@@ -1,0 +1,101 @@
+{
+  "purpose": "Fix iPhone build so translation and explanation structures match HOME and review scroll works.",
+  "summary": {
+    "total": 18,
+    "pass": 18,
+    "fail": 0,
+    "build": "PMP Coach iPhone FINAL RFG10 SYNCED"
+  },
+  "checks": [
+    {
+      "check": "iPhone JavaScript syntax OK",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Database 2700 records",
+      "status": "PASS",
+      "detail": "2700"
+    },
+    {
+      "check": "Set 3 = 720",
+      "status": "PASS",
+      "detail": "720"
+    },
+    {
+      "check": "Offline translation pack still embedded",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Source-question translation fallback exists",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Live iPhone question translation added",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Review source block translation added",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Cách 1 RFG10 exists",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Cách 2 RFG10 exists",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Review scroll fix applied",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Old visible v26 header removed",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Visible final header present",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "No runtime translation API for final review",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Screenshot question has Set3 translation twin",
+      "status": "PASS",
+      "detail": "Super_Plus_02_136 ↔ S3F_Super_Plus_02_136"
+    },
+    {
+      "check": "Screenshot question translation is embedded",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "Mock Final 1 = 180",
+      "status": "PASS",
+      "detail": "180"
+    },
+    {
+      "check": "Mock Final 2 = 180",
+      "status": "PASS",
+      "detail": "180"
+    },
+    {
+      "check": "Mock overlap = 0",
+      "status": "PASS",
+      "detail": "0"
+    }
+  ]
+}
