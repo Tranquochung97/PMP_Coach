@@ -1,4 +1,4 @@
-const CACHE='pmp-coach-iphone-final-rfg10-synced-20260910';
+const CACHE='pmp-coach-iphone-final-rfg10-dual-fixed-20260910-1505';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-180.png','./icon-512.png'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>{clients.claim();e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))))});

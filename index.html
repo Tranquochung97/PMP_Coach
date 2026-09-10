@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PMP Coach — iPhone FINAL RFG10 SYNCED</title>
+<title>PMP Coach — iPhone FINAL RFG10 DUAL FIXED DUAL FIXED FIXED</title>
 <style>
 
 :root{--nav:#173a61;--nav2:#0f2b49;--accent:#1f66ad;--bg:#f4f7fa;--card:#fff;--border:#ccd6e1;--text:#172331;--muted:#66788a;--good:#1b7f4b;--bad:#b52a2a;--warn:#9b6500;--hl:#fff59d}
@@ -829,7 +829,7 @@ button,input,select,textarea{font-family:var(--reading-font)!important}
 <body>
 <header class="top">
   <div>
-    <div class="brand">PMP Coach — iPhone FINAL RFG10</div>
+    <div class="brand">PMP Coach — iPhone FINAL RFG10 DUAL FIXED DUAL FIXED</div>
     <div class="sub">Thi thử · Review · 5.000 Vocabulary · 13 Day · 2.700 câu · Bộ 3 offline 720 câu · RFG10</div>
   </div>
   <div class="top-actions">
@@ -4096,6 +4096,65 @@ home=function(){
 </style>
 
 
+
+<script id="iphone-review-coachcorrecttext-hotfix">
+// ===== iPhone Review Hotfix: coachCorrectText fallback =====
+// Some old iPhone review attempts call logicReasonTag2(), which references coachCorrectText.
+// The HOME build had the supporting helper chain; the iPhone deployed build can miss it after cache/version merges.
+// This fallback prevents Review from crashing and keeps RFG10 explanations in Vietnamese.
+
+if (typeof window.coachCorrectText !== 'function') {
+  window.coachCorrectText = function(q){
+    try {
+      const ids = q?.correct || [];
+      const opts = q?.options || [];
+      return ids.map(id => {
+        const o = opts.find(x => x.id === id);
+        return o ? `${id}. ${o.text}` : id;
+      }).join('; ');
+    } catch(e) {
+      return '';
+    }
+  };
+}
+
+if (typeof coachCorrectText !== 'function') {
+  var coachCorrectText = window.coachCorrectText;
+}
+
+if (typeof window.coachOptionText !== 'function') {
+  window.coachOptionText = function(q, id){
+    try {
+      const o = (q?.options || []).find(x => x.id === id || x.id === id?.id);
+      return o ? o.text : '';
+    } catch(e) {
+      return '';
+    }
+  };
+}
+
+if (typeof coachOptionText !== 'function') {
+  var coachOptionText = window.coachOptionText;
+}
+
+// Extra guard around logicReasonTag2 so one missing helper never blocks Review.
+if (typeof logicReasonTag2 === 'function') {
+  const __logicReasonTag2_before_hotfix = logicReasonTag2;
+  logicReasonTag2 = function(q,o,c){
+    try {
+      return __logicReasonTag2_before_hotfix(q,o,c);
+    } catch(e) {
+      if (c) return 'Đúng root + role + sequence';
+      const txt = String(o?.text || '').toLowerCase();
+      if (txt.includes('escalat') || txt.includes('sponsor')) return 'Escalate quá sớm';
+      if (txt.includes('implement') || txt.includes('immediately')) return 'Hành động quá sớm';
+      if (txt.includes('ignore') || txt.includes('stop')) return 'Không xử lý đúng root';
+      return 'Sai root/role/sequence';
+    }
+  };
+}
+</script>
+
 <script id="pmp-rfg10-explanation-final">
 // ===== PMP RFG10 FINAL EXPLANATION ENGINE =====
 // Mục tiêu: Cách 1 và Cách 2 đều dùng tiếng Việt, gọn, không lặp bản dịch,
@@ -4687,6 +4746,184 @@ body.iphone-final-synced-review .iphone-review-bottom-final{
   .iphone-question-translated .full-vi,
   .option-text .full-vi{font-size:12.8px!important;line-height:1.42!important;padding:6px 8px!important}
   body.iphone-final-synced-review .review-one-top{position:sticky;top:0;background:#f5f7f9;z-index:20;padding-top:6px}
+}
+</style>
+
+
+<script id="iphone-dual-review-final-fix">
+// ===== iPhone FINAL: dual review + scroll hard fix =====
+// Both checkboxes now render independently and can stay ON together.
+// The explanation area refreshes in-place instead of rebuilding the whole Review page.
+
+function renderReviewExplanations(q,it){
+  let classicHtml='', logicHtml='';
+  if(REVIEW_EXPLAIN_MODES.classic){
+    try{ classicHtml=renderCompactReview(q,it); }
+    catch(e){ classicHtml=`<section class="rfg10-card rfg10-render-error"><b>Cách 1 gặp lỗi hiển thị:</b> ${esc(e?.message||String(e))}</section>`; }
+  }
+  if(REVIEW_EXPLAIN_MODES.logic){
+    try{ logicHtml=renderLogicReview(q,it); }
+    catch(e){ logicHtml=`<section class="rfg10-card rfg10-render-error"><b>Cách 2 gặp lỗi hiển thị:</b> ${esc(e?.message||String(e))}</section>`; }
+  }
+  return `<div id="reviewExplanations" class="dual-review-stack iphone-dual-review-stack"
+    data-classic="${REVIEW_EXPLAIN_MODES.classic?'1':'0'}"
+    data-logic="${REVIEW_EXPLAIN_MODES.logic?'1':'0'}">
+      ${classicHtml}${logicHtml}
+    </div>`;
+}
+
+function refreshReviewExplanations(attemptIndex,itemIndex){
+  const attempt=S.attempts?.[attemptIndex];
+  const it=attempt?.items?.[itemIndex];
+  if(!attempt||!it)return false;
+  const q=resolveReviewItemQuestion(it);
+  if(!q)return false;
+
+  const holder=document.getElementById('reviewExplanations');
+  if(!holder)return false;
+
+  let classicHtml='',logicHtml='';
+  if(REVIEW_EXPLAIN_MODES.classic){
+    try{classicHtml=renderCompactReview(q,it)}
+    catch(e){classicHtml=`<section class="rfg10-card rfg10-render-error"><b>Cách 1 gặp lỗi hiển thị:</b> ${esc(e?.message||String(e))}</section>`}
+  }
+  if(REVIEW_EXPLAIN_MODES.logic){
+    try{logicHtml=renderLogicReview(q,it)}
+    catch(e){logicHtml=`<section class="rfg10-card rfg10-render-error"><b>Cách 2 gặp lỗi hiển thị:</b> ${esc(e?.message||String(e))}</section>`}
+  }
+
+  holder.dataset.classic=REVIEW_EXPLAIN_MODES.classic?'1':'0';
+  holder.dataset.logic=REVIEW_EXPLAIN_MODES.logic?'1':'0';
+  holder.innerHTML=classicHtml+logicHtml;
+  return true;
+}
+
+function bindReviewModePicker(attemptIndex,itemIndex){
+  const a=document.getElementById('modeClassic');
+  const b=document.getElementById('modeLogic');
+
+  const apply=()=>{
+    const next={
+      classic:!!a?.checked,
+      logic:!!b?.checked
+    };
+    if(!next.classic&&!next.logic){
+      // Keep at least one mode active.
+      if(a)a.checked=true;
+      next.classic=true;
+      if(typeof toast==='function')toast('Giữ ít nhất 1 cách giải thích');
+    }
+    REVIEW_EXPLAIN_MODES=next;
+    saveReviewModes();
+    refreshReviewExplanations(attemptIndex,itemIndex);
+  };
+
+  if(a)a.onchange=apply;
+  if(b)b.onchange=apply;
+}
+
+// Keep mode labels synchronized with the new RFG10 names.
+function reviewModePickerHtml(){
+  return `<div class="review-mode-picker">
+    <b>Cách giải thích:</b>
+    <label class="review-mode-choice"><input type="checkbox" id="modeClassic" ${REVIEW_EXPLAIN_MODES.classic?'checked':''}> 1 · Giải thích nhanh</label>
+    <label class="review-mode-choice"><input type="checkbox" id="modeLogic" ${REVIEW_EXPLAIN_MODES.logic?'checked':''}> 2 · PMI Decision</label>
+    <span class="review-mode-note">Có thể bật cùng lúc cả 2</span>
+  </div>`;
+}
+</script>
+
+<style id="iphone-dual-review-final-fix-css">
+/* One scroll owner only: the Review card.
+   This avoids Safari body/nested-scroll conflicts when both explanations are long. */
+body.iphone-final-synced-review{
+  overflow:hidden!important;
+  height:100dvh!important;
+  min-height:100dvh!important;
+}
+body.iphone-final-synced-review #app{
+  height:calc(100dvh - 38px)!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+body.iphone-final-synced-review .review-one-wrap.iphone-review-scroll-wrap{
+  width:100%!important;
+  max-width:none!important;
+  height:100%!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+  padding:5px 6px 5px!important;
+}
+body.iphone-final-synced-review .review-one-top,
+body.iphone-final-synced-review .review-mode-picker,
+body.iphone-final-synced-review .iphone-review-bottom-final{
+  flex:0 0 auto!important;
+}
+body.iphone-final-synced-review .review-question-card.review-single-page.iphone-review-card-scroll{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+  overscroll-behavior-y:contain!important;
+  touch-action:pan-y!important;
+  display:block!important;
+  padding:7px 8px 28px!important;
+}
+body.iphone-final-synced-review .iphone-review-bottom-final{
+  position:static!important;
+  height:54px!important;
+  min-height:54px!important;
+  padding:5px 8px!important;
+}
+.iphone-dual-review-stack{
+  display:block!important;
+  width:100%!important;
+  overflow:visible!important;
+}
+.iphone-dual-review-stack>.rfg10-card,
+.iphone-dual-review-stack>.explain-mode{
+  display:block!important;
+  width:100%!important;
+  visibility:visible!important;
+  opacity:1!important;
+  position:relative!important;
+}
+.iphone-dual-review-stack>.rfg10-card+.rfg10-card,
+.iphone-dual-review-stack>.explain-mode+.explain-mode{
+  margin-top:14px!important;
+}
+.rfg10-render-error{
+  padding:12px!important;
+  color:#8f2f28!important;
+  background:#fff6f5!important;
+  border-color:#e8bbb6!important;
+}
+@media(max-width:700px){
+  .review-mode-picker{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    gap:6px!important;
+  }
+  .review-mode-picker>b{
+    grid-column:1/-1!important;
+    width:auto!important;
+  }
+  .review-mode-picker .review-mode-choice{
+    min-height:35px!important;
+    justify-content:center!important;
+    font-size:10.5px!important;
+  }
+  .review-mode-picker .review-mode-note{
+    grid-column:1/-1!important;
+    display:block!important;
+    text-align:center!important;
+    font-size:9px!important;
+  }
 }
 </style>
 
